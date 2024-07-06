@@ -41,6 +41,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -88,6 +91,7 @@ class MainActivity : ComponentActivity() {
                 var currentDate by remember {
                     mutableStateOf(getCurrentDate("yyyy-MM-dd"))
                 }
+                var loading by remember { mutableStateOf(true) }
 
                 val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
                 val mode = appOps.checkOpNoThrow(
@@ -102,17 +106,18 @@ class MainActivity : ComponentActivity() {
                        list.clear()
                        val listOfIcons= withContext(Dispatchers.IO){getStatics(currentDate)}
                        list.addAll(listOfIcons)
+                       loading = false
                    }
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        val offset = Offset(5.0f, 8.0f)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
+                        val offset = Offset(5.0f, 6.0f)
 
                         Text(text = "Check Your App Statistics On Daily Bases", textAlign = TextAlign.Center, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(
                             fontSize = 16.sp,
-                            shadow = Shadow(color = Color.Blue, offset = offset, blurRadius = 2f))
+                            shadow = Shadow(color = Color.Red, offset = offset, blurRadius = 1f))
                         )
 
-                        Row (modifier = Modifier.padding(8.dp).fillMaxWidth()){
+                        Row (modifier = Modifier.padding(8.dp).fillMaxWidth(), verticalAlignment = Alignment.Top){
 
                             Image(painter = painterResource(id =R.drawable.baseline_arrow_back_24 ), contentDescription ="a" , modifier = Modifier
                                 .size(25.dp)
@@ -120,6 +125,7 @@ class MainActivity : ComponentActivity() {
                                 .clickable {
                                     val newDate = increaseAndDecreaseDay(currentDate, -1)
                                     currentDate = newDate
+                                    loading = true
                                 }, alignment = Alignment.CenterStart)
                             Text(text = currentDate, color = Color.Black, fontSize = 20.sp, textAlign = TextAlign.Center)
                             Image(painter = painterResource(id =R.drawable.baseline_arrow_forward_24 ), contentDescription ="a" , modifier = Modifier
@@ -128,10 +134,26 @@ class MainActivity : ComponentActivity() {
                                 .clickable {
                                     val newDate = increaseAndDecreaseDay(currentDate, 1)
                                     currentDate = newDate
+                                    loading = true
                                 }, alignment = Alignment.CenterEnd)
 
                         }
                         IconsSampleRow(list)
+                        if(loading){
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ){
+                                CircularProgressIndicator(
+                                    modifier = Modifier.width(40.dp),
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    strokeCap = StrokeCap.Round,
+                                )
+                            }
+
+                        }
                     }
                 }
             }
