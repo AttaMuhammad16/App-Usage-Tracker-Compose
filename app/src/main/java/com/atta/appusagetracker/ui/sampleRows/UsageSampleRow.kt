@@ -1,5 +1,7 @@
 package com.atta.appusagetracker.ui.sampleRows
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,19 +19,21 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.atta.appusagetracker.model.UsageModel
+import com.atta.appusagetracker.ui.activities.GraphActivity
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 
 @Composable
-fun UsageSampleRow(list: List<UsageModel>) {
+fun Context.UsageSampleRow(list: List<UsageModel>) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         items(list.size) { i ->
             val data=list[i]
@@ -38,7 +42,11 @@ fun UsageSampleRow(list: List<UsageModel>) {
                     .fillMaxWidth()
                     .fillMaxHeight(1f)
                     .padding(5.dp)
-                    .clickable { /* Handle card click */ },
+                    .clickable {
+                        val intent = Intent(this@UsageSampleRow, GraphActivity::class.java)
+                        intent.putExtra("time", data.timeInMilliseconds)
+                        startActivity(intent)
+                    },
                 shape = RoundedCornerShape(10.dp),
                 elevation = CardDefaults.cardElevation(5.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -61,6 +69,12 @@ fun UsageSampleRow(list: List<UsageModel>) {
                     )
                     Text(
                         text = data.usageTime,
+                        color = Color.Black,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = data.installationDate,
                         color = Color.Black,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1

@@ -1,10 +1,7 @@
-package com.atta.appusagetracker
+package com.atta.appusagetracker.ui.activities
 
 import android.app.AppOpsManager
-import android.app.usage.UsageStatsManager
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
@@ -14,27 +11,17 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -54,19 +41,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import com.atta.appusagetracker.R
 import com.atta.appusagetracker.model.UsageModel
 import com.atta.appusagetracker.ui.sampleRows.UsageSampleRow
 import com.atta.appusagetracker.ui.theme.AppUsageTrackerTheme
 import com.atta.appusagetracker.utils.Utils.getCurrentDate
 import com.atta.appusagetracker.utils.Utils.getStatics
 import com.atta.appusagetracker.utils.Utils.increaseAndDecreaseDay
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
@@ -112,7 +96,7 @@ class MainActivity : ComponentActivity() {
                             .padding(8.dp)
                             .fillMaxWidth(), verticalAlignment = Alignment.Top){
 
-                            Image(painter = painterResource(id =R.drawable.baseline_arrow_back_24 ), contentDescription ="a" , modifier = Modifier
+                            Image(painter = painterResource(id = R.drawable.baseline_arrow_back_24), contentDescription ="a" , modifier = Modifier
                                 .size(25.dp)
                                 .weight(1f)
                                 .clickable {
@@ -122,7 +106,7 @@ class MainActivity : ComponentActivity() {
                                     loading = true
                                 }, alignment = Alignment.CenterStart)
                             Text(text = currentDate, color = Color.Black, fontSize = 20.sp, textAlign = TextAlign.Center)
-                            Image(painter = painterResource(id =R.drawable.baseline_arrow_forward_24 ), contentDescription ="a" , modifier = Modifier
+                            Image(painter = painterResource(id = R.drawable.baseline_arrow_forward_24), contentDescription ="a" , modifier = Modifier
                                 .size(25.dp)
                                 .weight(1f)
                                 .clickable {
@@ -174,6 +158,8 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+
 
 
 }

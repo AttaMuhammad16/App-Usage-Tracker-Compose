@@ -1,12 +1,17 @@
 package com.atta.appusagetracker.utils
 
 import android.app.usage.UsageStatsManager
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.getSystemService
 import com.atta.appusagetracker.model.UsageModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -64,8 +69,6 @@ object Utils {
 
                     // Fetch additional statistics
                     val todayUsage = formattedTime
-                    val highestTimeInMilli = getHighestDailyUsage(systemService, usageStats.packageName)
-                    val highestDailyUsage = formatTime(highestTimeInMilli)
 
                     val usageModel = UsageModel(
                         appName = appName,
@@ -73,10 +76,12 @@ object Utils {
                         usageTime = formattedTime,
                         appIcons = appIcon,
                         todayUsage = todayUsage,
-                        highestDailyUsage = highestDailyUsage,
-                        installationDate = installationDate
+                        installationDate = installationDate,
+                        timeInMilliseconds = usageStats.totalTimeInForeground
                     )
+
                     listOfUsageModels.add(usageModel)
+
                 } catch (e: PackageManager.NameNotFoundException) {
                     e.printStackTrace()
                 }
@@ -94,6 +99,8 @@ object Utils {
             "N/A"
         }
     }
+
+
 
     fun getHighestDailyUsage(usageStatsManager: UsageStatsManager, packageName: String): Long {
         return try {
