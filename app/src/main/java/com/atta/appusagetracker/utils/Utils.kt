@@ -40,14 +40,14 @@ object Utils {
 
 
 
-    suspend fun Context.getStatics(date: String): ArrayList<UsageModel> {
-        val systemService = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val packageManager = packageManager
+    var totalFormattedTime="0"
+    suspend fun Context.getStatics(date: String,systemService:UsageStatsManager): ArrayList<UsageModel> {
+        var totalTimeInForeground=0L
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val selectedDate = dateFormat.parse(date) ?: Date()
         val startTime = selectedDate.time
-        val endTime = startTime + 24 * 60 * 60 * 1000
+        val endTime = startTime + 12 * 60 * 60 * 1000
 
         val lUsageStatsMap = systemService.queryAndAggregateUsageStats(startTime, endTime)
         val listOfUsageModels = ArrayList<UsageModel>()
@@ -81,12 +81,13 @@ object Utils {
                     )
 
                     listOfUsageModels.add(usageModel)
-
+                    totalTimeInForeground+=usageStats.totalTimeInForeground
                 } catch (e: PackageManager.NameNotFoundException) {
                     e.printStackTrace()
                 }
             }
         }
+        totalFormattedTime=formatTime(totalTimeInForeground)
         return listOfUsageModels
     }
 
@@ -99,19 +100,6 @@ object Utils {
             "N/A"
         }
     }
-
-
-
-    fun getHighestDailyUsage(usageStatsManager: UsageStatsManager, packageName: String): Long {
-        return try {
-            val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, 0, System.currentTimeMillis())
-            stats.filter { it.packageName == packageName }.maxOfOrNull { it.totalTimeInForeground } ?: 0
-        } catch (e: Exception) {
-            e.printStackTrace()
-            0
-        }
-    }
-
 
     fun formatTime(milliseconds: Long): String {
         val seconds = milliseconds / 1000

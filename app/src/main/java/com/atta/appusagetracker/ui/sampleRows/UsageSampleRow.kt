@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.atta.appusagetracker.model.UsageModel
-import com.atta.appusagetracker.ui.activities.GraphActivity
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 
 @Composable
@@ -43,9 +42,6 @@ fun Context.UsageSampleRow(list: List<UsageModel>) {
                     .fillMaxHeight(1f)
                     .padding(5.dp)
                     .clickable {
-                        val intent = Intent(this@UsageSampleRow, GraphActivity::class.java)
-                        intent.putExtra("time", data.timeInMilliseconds)
-                        startActivity(intent)
                     },
                 shape = RoundedCornerShape(10.dp),
                 elevation = CardDefaults.cardElevation(5.dp),

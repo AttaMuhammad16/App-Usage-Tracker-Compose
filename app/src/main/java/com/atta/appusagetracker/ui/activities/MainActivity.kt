@@ -1,11 +1,14 @@
 package com.atta.appusagetracker.ui.activities
 
 import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -16,10 +19,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -48,16 +54,20 @@ import com.atta.appusagetracker.ui.theme.AppUsageTrackerTheme
 import com.atta.appusagetracker.utils.Utils.getCurrentDate
 import com.atta.appusagetracker.utils.Utils.getStatics
 import com.atta.appusagetracker.utils.Utils.increaseAndDecreaseDay
+import com.atta.appusagetracker.utils.Utils.totalFormattedTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
+    lateinit var systemService:UsageStatsManager
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val map:MutableMap<String,List<UsageModel>> = hashMapOf()
+        val timeMap:MutableMap<String,String> = hashMapOf()
+        systemService = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         setContent {
             AppUsageTrackerTheme {
 
@@ -78,24 +88,27 @@ class MainActivity : ComponentActivity() {
 
                    LaunchedEffect(key1 = currentDate){
                        list.clear()
-                       val listOfUsage = map[currentDate] ?: withContext(Dispatchers.IO) { getStatics(currentDate) }
+                       val listOfUsage = map[currentDate] ?: withContext(Dispatchers.IO) { getStatics(currentDate,systemService) }
                        list.addAll(listOfUsage)
                        loading = false
                        map[currentDate] = listOfUsage
+                       totalFormattedTime = timeMap[currentDate]?: totalFormattedTime
+                       timeMap[currentDate] = totalFormattedTime
                    }
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
-                        val offset = Offset(5.0f, 6.0f)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier
+                        .fillMaxSize()
+                        .padding(5.dp)) {
+                        val offset = Offset(2.0f, 3.0f)
 
                         Text(text = "Check Your App Statistics On Daily Bases", textAlign = TextAlign.Center, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(
                             fontSize = 16.sp,
-                            shadow = Shadow(color = Color.Red, offset = offset, blurRadius = 1f))
+                            shadow = Shadow(color = Color.Red, offset = offset, blurRadius = 2f))
                         )
 
                         Row (modifier = Modifier
                             .padding(8.dp)
                             .fillMaxWidth(), verticalAlignment = Alignment.Top){
-
                             Image(painter = painterResource(id = R.drawable.baseline_arrow_back_24), contentDescription ="a" , modifier = Modifier
                                 .size(25.dp)
                                 .weight(1f)
@@ -115,12 +128,19 @@ class MainActivity : ComponentActivity() {
                                     val newDate = increaseAndDecreaseDay(currentDate, 1) {
                                         time = it
                                     }
+
                                     if (System.currentTimeMillis() > time) {
                                         currentDate = newDate
                                         loading = true
                                     }
                                 }, alignment = Alignment.CenterEnd)
                         }
+
+                        Row(modifier = Modifier.padding(start = 7.dp, end = 7.dp)) {
+                            Text(text = "Total Time Spend", modifier = Modifier.weight(1f), textAlign = TextAlign.Start, color = Color.Black)
+                            Text(text = totalFormattedTime, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = Color.Black)
+                        }
+                        HorizontalDivider(modifier = Modifier.fillMaxWidth().height(2.dp), color = Color.Black)
 
                         if(loading){
                             Box(
@@ -135,9 +155,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-
                         UsageSampleRow(list)
-
                     }
                 }
             }
@@ -154,7 +172,7 @@ class MainActivity : ComponentActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK&&requestCode==12) {
             lifecycleScope.launch {
-                getStatics(getCurrentDate("yyyy-MM-dd"))
+                getStatics(getCurrentDate("yyyy-MM-dd"),systemService)
             }
         }
     }
