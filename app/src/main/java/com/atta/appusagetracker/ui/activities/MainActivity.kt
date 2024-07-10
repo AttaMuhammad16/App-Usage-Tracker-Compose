@@ -1,5 +1,6 @@
 package com.atta.appusagetracker.ui.activities
 
+import android.app.Activity
 import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -28,11 +29,14 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,128 +60,132 @@ import com.atta.appusagetracker.utils.Utils.getStatics
 import com.atta.appusagetracker.utils.Utils.increaseAndDecreaseDay
 import com.atta.appusagetracker.utils.Utils.totalFormattedTime
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
     lateinit var systemService:UsageStatsManager
+    lateinit var map:MutableMap<String,List<UsageModel>>
+    lateinit var timeMap:MutableMap<String,String>
+    var RequestCode=12
+    lateinit var state:MutableStateFlow<Boolean>
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val map:MutableMap<String,List<UsageModel>> = hashMapOf()
-        val timeMap:MutableMap<String,String> = hashMapOf()
+        map= hashMapOf()
+        timeMap=hashMapOf()
         systemService = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        state=MutableStateFlow(true)
         setContent {
             AppUsageTrackerTheme {
-
-                val list = remember { mutableStateListOf<UsageModel>() }
-                var currentDate by remember {
-                    mutableStateOf(getCurrentDate("yyyy-MM-dd"))
-                }
-                var loading by remember { mutableStateOf(true) }
-
-                val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
-                val mode = appOps.checkOpNoThrow(
-                    AppOpsManager.OPSTR_GET_USAGE_STATS,
-                    Process.myUid(), packageName
-                )
-                if (mode != AppOpsManager.MODE_ALLOWED) {
-                    startPermissionActivity()
-                } else {
-
-                   LaunchedEffect(key1 = currentDate){
-                       list.clear()
-                       val listOfUsage = map[currentDate] ?: withContext(Dispatchers.IO) { getStatics(currentDate,systemService) }
-                       list.addAll(listOfUsage)
-                       loading = false
-                       map[currentDate] = listOfUsage
-                       totalFormattedTime = timeMap[currentDate]?: totalFormattedTime
-                       timeMap[currentDate] = totalFormattedTime
-                   }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier
-                        .fillMaxSize()
-                        .padding(5.dp)) {
-                        val offset = Offset(2.0f, 3.0f)
-
-                        Text(text = "Check Your App Statistics On Daily Bases", textAlign = TextAlign.Center, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(
-                            fontSize = 16.sp,
-                            shadow = Shadow(color = Color.Red, offset = offset, blurRadius = 2f))
-                        )
-
-                        Row (modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(), verticalAlignment = Alignment.Top){
-                            Image(painter = painterResource(id = R.drawable.baseline_arrow_back_24), contentDescription ="a" , modifier = Modifier
-                                .size(25.dp)
-                                .weight(1f)
-                                .clickable {
-                                    val newDate = increaseAndDecreaseDay(currentDate, -1) {
-                                    }
-                                    currentDate = newDate
-                                    loading = true
-                                }, alignment = Alignment.CenterStart)
-                            Text(text = currentDate, color = Color.Black, fontSize = 20.sp, textAlign = TextAlign.Center)
-                            Image(painter = painterResource(id = R.drawable.baseline_arrow_forward_24), contentDescription ="a" , modifier = Modifier
-                                .size(25.dp)
-                                .weight(1f)
-                                .clickable {
-
-                                    var time: Long = 0
-                                    val newDate = increaseAndDecreaseDay(currentDate, 1) {
-                                        time = it
-                                    }
-
-                                    if (System.currentTimeMillis() > time) {
-                                        currentDate = newDate
-                                        loading = true
-                                    }
-                                }, alignment = Alignment.CenterEnd)
-                        }
-
-                        Row(modifier = Modifier.padding(start = 7.dp, end = 7.dp)) {
-                            Text(text = "Total Time Spend", modifier = Modifier.weight(1f), textAlign = TextAlign.Start, color = Color.Black)
-                            Text(text = totalFormattedTime, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = Color.Black)
-                        }
-                        HorizontalDivider(modifier = Modifier.fillMaxWidth().height(2.dp), color = Color.Black)
-
-                        if(loading){
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ){
-                                CircularProgressIndicator(
-                                    modifier = Modifier.width(40.dp),
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    strokeCap = StrokeCap.Round,
-                                )
-                            }
-                        }
-                        UsageSampleRow(list)
-                    }
-                }
+                ShowDataToUser(map,timeMap)
             }
         }
     }
 
 
     fun startPermissionActivity() {
-        startActivityForResult(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS), 12);
+        val intent=Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+        startActivity(intent)
     }
 
+
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK&&requestCode==12) {
-            lifecycleScope.launch {
-                getStatics(getCurrentDate("yyyy-MM-dd"),systemService)
+    @Composable
+    fun ShowDataToUser(map:MutableMap<String,List<UsageModel>>,timeMap:MutableMap<String,String> ) {
+        val list = remember { mutableStateListOf<UsageModel>() }
+        var currentDate by remember {
+            mutableStateOf(getCurrentDate("yyyy-MM-dd"))
+        }
+        var loading by remember { mutableStateOf(true) }
+
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(), packageName
+        )
+        if (mode != AppOpsManager.MODE_ALLOWED) {
+            startPermissionActivity()
+            finish()
+        } else {
+            LaunchedEffect(key1 = currentDate){
+                list.clear()
+                val listOfUsage = map[currentDate] ?: withContext(Dispatchers.IO) { getStatics(currentDate,systemService) }
+                list.addAll(listOfUsage)
+                loading = false
+                map[currentDate] = listOfUsage
+                totalFormattedTime = timeMap[currentDate]?: totalFormattedTime
+                timeMap[currentDate] = totalFormattedTime
+            }
+
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier
+                .fillMaxSize()
+                .padding(5.dp)) {
+                val offset = Offset(2.0f, 3.0f)
+
+                Text(text = "Check Your App Statistics On Daily Bases", textAlign = TextAlign.Center, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis, style = TextStyle(
+                    fontSize = 16.sp,
+                    shadow = Shadow(color = Color.Red, offset = offset, blurRadius = 2f))
+                )
+
+                Row (modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(), verticalAlignment = Alignment.Top){
+                    Image(painter = painterResource(id = R.drawable.baseline_arrow_back_24), contentDescription ="a" , modifier = Modifier
+                        .size(25.dp)
+                        .weight(1f)
+                        .clickable {
+                            val newDate = increaseAndDecreaseDay(currentDate, -1) {
+                            }
+                            currentDate = newDate
+                            loading = true
+                        }, alignment = Alignment.CenterStart)
+                    Text(text = currentDate, color = Color.Black, fontSize = 20.sp, textAlign = TextAlign.Center)
+                    Image(painter = painterResource(id = R.drawable.baseline_arrow_forward_24), contentDescription ="a" , modifier = Modifier
+                        .size(25.dp)
+                        .weight(1f)
+                        .clickable {
+
+                            var time: Long = 0
+                            val newDate = increaseAndDecreaseDay(currentDate, 1) {
+                                time = it
+                            }
+
+                            if (System.currentTimeMillis() > time) {
+                                currentDate = newDate
+                                loading = true
+                            }
+                        }, alignment = Alignment.CenterEnd)
+                }
+
+                Row(modifier = Modifier.padding(start = 7.dp, end = 7.dp)) {
+                    Text(text = "Total Time Spend", modifier = Modifier.weight(1f), textAlign = TextAlign.Start, color = Color.Black)
+                    Text(text = totalFormattedTime, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = Color.Black)
+                }
+                HorizontalDivider(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp), color = Color.Black)
+
+                if(loading){
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ){
+                        CircularProgressIndicator(
+                            modifier = Modifier.width(40.dp),
+                            color = MaterialTheme.colorScheme.secondary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            strokeCap = StrokeCap.Round,
+                        )
+                    }
+                }
+                UsageSampleRow(list)
             }
         }
     }
-
-
-
 
 }
