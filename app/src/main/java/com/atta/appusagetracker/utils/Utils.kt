@@ -55,6 +55,7 @@ object Utils {
         for (usageStats in lUsageStatsMap.values) {
 
             if (usageStats.totalTimeInForeground >= 1) {
+
                 val formattedTime = if (usageStats.totalTimeInForeground < 1000) {
                     "${usageStats.totalTimeInForeground} ms"
                 } else {

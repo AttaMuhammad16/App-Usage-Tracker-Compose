@@ -50,31 +50,37 @@ fun Context.UsageSampleRow(list: List<UsageModel>) {
                 Column(modifier = Modifier
                     .padding(5.dp)
                     .fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+
                     Image(
                         painter = rememberDrawablePainter(drawable = data.appIcons),
                         contentDescription = null,
                         modifier = Modifier
                             .size(40.dp)
                     )
+
                     Spacer(modifier = Modifier.height(2.dp)) // Add spacing between elements
+
                     Text(
                         text = data.appName,
                         color = Color.Black,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1
                     )
+
                     Text(
                         text = data.usageTime,
                         color = Color.Black,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1
                     )
+
                     Text(
                         text = data.installationDate,
                         color = Color.Black,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1
                     )
+
                 }
             }
         }

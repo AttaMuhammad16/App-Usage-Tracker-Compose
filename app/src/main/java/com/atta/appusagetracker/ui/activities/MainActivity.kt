@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
             startPermissionActivity()
             finish()
         } else {
+
             LaunchedEffect(key1 = currentDate){
                 list.clear()
                 val listOfUsage = map[currentDate] ?: withContext(Dispatchers.IO) { getStatics(currentDate,systemService) }
@@ -166,6 +167,7 @@ class MainActivity : ComponentActivity() {
                     Text(text = "Total Time Spend", modifier = Modifier.weight(1f), textAlign = TextAlign.Start, color = Color.Black)
                     Text(text = totalFormattedTime, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = Color.Black)
                 }
+
                 HorizontalDivider(modifier = Modifier
                     .fillMaxWidth()
                     .height(2.dp), color = Color.Black)
@@ -183,6 +185,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+
                 UsageSampleRow(list)
             }
         }
