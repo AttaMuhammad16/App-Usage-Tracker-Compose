@@ -1,4 +1,4 @@
-![screen_2](https://github.com/user-attachments/assets/df92cf44-4087-4f64-a93b-f24321b4bb40)# 📱 App Usage Tracker
+# 📱 App Usage Tracker
 
 **App Usage Tracker** is a minimal, modern Android application built using **Jetpack Compose** that allows users to track:
 
